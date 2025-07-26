@@ -76,8 +76,8 @@ export default function getRandomShape() {
 	const shape = SHAPES[randomIndex];
 	return {
 		name: shape.name,
-		matrix: shape.matrix.map(row => [...row]), // создаём копию матрицы
-		position: { ...shape.position }, // создаём копию позиции
+		matrix: shape.matrix.map(row => [...row]),
+		position: { ...shape.position },
 		img: shape.img,
 	};
 }
