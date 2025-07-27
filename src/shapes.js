@@ -7,7 +7,7 @@ const SHAPES = [
 			[0, 1, 1],
 		],
 		position: { i: 0, j: 3 },
-		img: '/images/blue.png',
+		img: '/tetris/images/blue.png',
 	},
 	{
 		name: 'J',
@@ -17,7 +17,7 @@ const SHAPES = [
 			[1, 1, 0],
 		],
 		position: { i: 0, j: 4 },
-		img: '/images/orange.png',
+		img: '/tetris/images/orange.png',
 	},
 	{
 		name: 'O',
@@ -26,7 +26,7 @@ const SHAPES = [
 			[1, 1],
 		],
 		position: { i: 0, j: 4 },
-		img: '/images/yellow.png',
+		img: '/tetris/images/yellow.png',
 	},
 	{
 		name: 'S',
@@ -36,7 +36,7 @@ const SHAPES = [
 			[1, 1, 0],
 		],
 		position: { i: -1, j: 3 },
-		img: '/images/green.png',
+		img: '/tetris/images/green.png',
 	},
 	{
 		name: 'Z',
@@ -46,7 +46,7 @@ const SHAPES = [
 			[0, 1, 1],
 		],
 		position: { i: -1, j: 3 },
-		img: '/images/red.png',
+		img: '/tetris/images/red.png',
 	},
 	{
 		name: 'I',
@@ -57,7 +57,7 @@ const SHAPES = [
 			[0, 0, 0, 0],
 		],
 		position: { i: -1, j: 3 },
-		img: '/images/cyan.png',
+		img: '/tetris/images/cyan.png',
 	},
 	{
 		name: 'T',
@@ -67,7 +67,7 @@ const SHAPES = [
 			[1, 1, 1],
 		],
 		position: { i: -1, j: 3 },
-		img: '/images/purple.png',
+		img: '/tetris/images/purple.png',
 	},
 ];
 
