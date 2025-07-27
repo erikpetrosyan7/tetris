@@ -1,5 +1,5 @@
 function NextShapePreview({ nextShape }) {
-	const shapeUrl = `/images/${nextShape.name}-shape.png`;
+	const shapeUrl = `/tetris/images/${nextShape.name}-shape.png`;
 
 	return (
 		<div className='next-shape-preview'>

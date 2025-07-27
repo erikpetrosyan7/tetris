@@ -290,7 +290,7 @@ function App() {
 				<img
 					onClick={() => setIsPaused(true)}
 					className='pause'
-					src='/images/pause.png'
+					src='/tetris/images/pause.png'
 					alt='pause-button'
 				/>
 				{isPaused && (

@@ -24,9 +24,9 @@ export default function GameOver({ score, timer, level, lines }) {
 					</div>
 				</div>
 				<div className='game-over-buttons'>
-					<img src='/images/home.png' alt='home-button' />
+					<img src='/tetris/images/home.png' alt='home-button' />
 
-					<img src='/images/restart.png' alt='restart-button' />
+					<img src='/tetris/images/restart.png' alt='restart-button' />
 				</div>
 			</div>
 		</div>
