@@ -4,6 +4,8 @@ export default function GameOver({
 	level,
 	lines,
 	handleRestart,
+	setIsInHome,
+	setIsGameOver,
 }) {
 	return (
 		<div>
@@ -30,7 +32,15 @@ export default function GameOver({
 					</div>
 				</div>
 				<div className='game-over-buttons'>
-					<img src='/tetris/images/home.png' alt='home-button' />
+					<img
+						src='/tetris/images/home.png'
+						alt='home-button'
+						onClick={() => {
+							setIsInHome(true);
+							setIsGameOver(false);
+							handleRestart();
+						}}
+					/>
 
 					<img
 						src='/tetris/images/restart.png'

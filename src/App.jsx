@@ -304,6 +304,8 @@ function App() {
 						level={level}
 						lines={lines}
 						handleRestart={handleRestart}
+						setIsInHome={setIsInHome}
+						setIsGameOver={setIsGameOver}
 					/>
 				)}
 
