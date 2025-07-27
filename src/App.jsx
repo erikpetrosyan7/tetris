@@ -228,7 +228,7 @@ function App() {
 
 				setScore(prev => prev + calculateScore(linesCleared, level));
 				setLines(prev => prev + linesCleared);
-				if (lines === 10) {
+				if (lines + linesCleared >= level * 10) {
 					setLevel(prev => prev + 1);
 				}
 				setTimeout(() => {
@@ -311,15 +311,6 @@ function App() {
 					<Home setIsInHome={setIsInHome} />
 				) : (
 					<div className='play-area'>
-						{isGameOver && (
-							<GameOver
-								score={score}
-								timer={timer}
-								level={level}
-								lines={lines}
-								handleRestart={handleRestart}
-							/>
-						)}
 						{mergedBoard.map((row, i) => (
 							<div
 								className={`row ${clearingLines.includes(i) ? 'clearing' : ''}`}
