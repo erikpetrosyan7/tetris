@@ -1,5 +1,6 @@
 {
 	"name": "tetris",
+	"homepage": "https://github.com/erikpetrosyan7/tetris",
 	"private": true,
 	"version": "0.0.0",
 	"type": "module",
