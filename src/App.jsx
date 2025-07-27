@@ -6,6 +6,7 @@ import getRandomShape from './shapes';
 import NextShapePreview from './NextShapePreview';
 import GameStats from './GameStats';
 import GameOver from './GameOver';
+import Home from './Home';
 
 const width = 10;
 const height = 20;
@@ -73,6 +74,7 @@ const formatTime = seconds => {
 function App() {
 	const [isGameOver, setIsGameOver] = useState(false);
 	const [isPaused, setIsPaused] = useState(false);
+	const [isInHome, setIsInHome] = useState(true);
 	const [clearingLines, setClearingLines] = useState([]);
 	const [level, setLevel] = useState(1);
 	const [score, setScore] = useState(0);
@@ -98,6 +100,32 @@ function App() {
 			.fill(null)
 			.map(() => Array(width).fill(0))
 	);
+
+	const handleRestart = () => {
+		isLocking.current = false;
+
+		setIsGameOver(false);
+		setIsPaused(false);
+		setClearingLines([]);
+		setLevel(1);
+		setScore(0);
+		setLines(0);
+		setStartTime(null);
+		setEndTime(null);
+		setElapsedTime(0);
+
+		const newCurrentShape = getRandomShape();
+		setCurrentShape(newCurrentShape);
+		setNextShape(getNextDifferentShape(newCurrentShape));
+
+		setGoDownSteps(0);
+
+		setBoard(
+			Array(height)
+				.fill(null)
+				.map(() => Array(width).fill(0))
+		);
+	};
 
 	// Timer logic
 	useEffect(() => {
@@ -248,7 +276,7 @@ function App() {
 	};
 
 	useEffect(() => {
-		if (isGameOver || isPaused) return;
+		if (isGameOver || isPaused || isInHome) return;
 
 		moveDown();
 
@@ -257,7 +285,7 @@ function App() {
 		}, 500);
 
 		return () => clearTimeout(timeout);
-	}, [goDownSteps, isPaused, isGameOver]);
+	}, [goDownSteps, isPaused, isInHome, isGameOver]);
 
 	const mergedBoard = getMergedBoard(
 		board,
@@ -268,48 +296,87 @@ function App() {
 
 	return (
 		<div className='container'>
-			<div className='play-area'>
+			<>
 				{isGameOver && (
-					<GameOver score={score} timer={timer} level={level} lines={lines} />
+					<GameOver
+						score={score}
+						timer={timer}
+						level={level}
+						lines={lines}
+						handleRestart={handleRestart}
+					/>
 				)}
-				{mergedBoard.map((row, i) => (
-					<div
-						className={`row ${clearingLines.includes(i) ? 'clearing' : ''}`}
-						key={i}
-					>
-						{row.map((cell, j) => (
-							<div className='cell' key={j}>
-								{cell && <img src={cell} alt='block' className='shape-img' />}
+
+				{isInHome ? (
+					<Home setIsInHome={setIsInHome} />
+				) : (
+					<div className='play-area'>
+						{isGameOver && (
+							<GameOver
+								score={score}
+								timer={timer}
+								level={level}
+								lines={lines}
+								handleRestart={handleRestart}
+							/>
+						)}
+						{mergedBoard.map((row, i) => (
+							<div
+								className={`row ${clearingLines.includes(i) ? 'clearing' : ''}`}
+								key={i}
+							>
+								{row.map((cell, j) => (
+									<div className='cell' key={j}>
+										{cell && (
+											<img src={cell} alt='block' className='shape-img' />
+										)}
+									</div>
+								))}
 							</div>
 						))}
 					</div>
-				))}
-			</div>
+				)}
 
-			<div className='right-board'>
-				<img
-					onClick={() => setIsPaused(true)}
-					className='pause'
-					src='/tetris/images/pause.png'
-					alt='pause-button'
-				/>
-				{isPaused && (
-					<div>
-						<div className='pause-background'> </div>
-						<div className='pause-popup'>
-							<h3>PAUSED</h3>
-							<div className='resume-button' onClick={() => setIsPaused(false)}>
-								<p>RESUME</p>
-							</div>
-							<div className='quit-button'>
-								<p>QUIT</p>
+				<div className='right-board'>
+					<img
+						onClick={() => setIsPaused(true)}
+						className='pause'
+						src='/tetris/images/pause.png'
+						alt='pause-button'
+						style={{ visibility: isInHome ? 'hidden' : 'visible' }}
+					/>
+					{isPaused && (
+						<div>
+							<div className='pause-background'> </div>
+							<div className='pause-popup'>
+								<h3>PAUSED</h3>
+								<div
+									className='resume-button'
+									onClick={() => setIsPaused(false)}
+								>
+									<p>RESUME</p>
+								</div>
+								<div
+									className='quit-button'
+									onClick={() => {
+										setIsInHome(true);
+										setIsPaused(false);
+									}}
+								>
+									<p>QUIT</p>
+								</div>
 							</div>
 						</div>
-					</div>
-				)}
-				<NextShapePreview nextShape={nextShape} />
-				<GameStats level={level} score={score} lines={lines} />
-			</div>
+					)}
+					<NextShapePreview nextShape={nextShape} isInHome={isInHome} />
+					<GameStats
+						level={level}
+						score={score}
+						lines={lines}
+						isInHome={isInHome}
+					/>
+				</div>
+			</>
 		</div>
 	);
 }

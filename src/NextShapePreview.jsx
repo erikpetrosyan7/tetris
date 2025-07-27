@@ -1,4 +1,4 @@
-function NextShapePreview({ nextShape }) {
+function NextShapePreview({ nextShape, isInHome }) {
 	const shapeUrl = `/tetris/images/${nextShape.name}-shape.png`;
 
 	return (
@@ -7,7 +7,9 @@ function NextShapePreview({ nextShape }) {
 				<h3>NEXT</h3>
 			</div>
 			<div className='shape-grid'>
-				<img src={shapeUrl} className='shape-img' />
+				{!isInHome && (
+					<img src={shapeUrl} className='shape-img' alt='Next shape' />
+				)}
 			</div>
 		</div>
 	);

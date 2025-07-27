@@ -1,4 +1,10 @@
-export default function GameOver({ score, timer, level, lines }) {
+export default function GameOver({
+	score,
+	timer,
+	level,
+	lines,
+	handleRestart,
+}) {
 	return (
 		<div>
 			<div className='game-over-background'> </div>
@@ -26,7 +32,11 @@ export default function GameOver({ score, timer, level, lines }) {
 				<div className='game-over-buttons'>
 					<img src='/tetris/images/home.png' alt='home-button' />
 
-					<img src='/tetris/images/restart.png' alt='restart-button' />
+					<img
+						src='/tetris/images/restart.png'
+						alt='restart-button'
+						onClick={() => handleRestart()}
+					/>
 				</div>
 			</div>
 		</div>

@@ -1,20 +1,18 @@
-function GameStats({ level, score, lines }) {
+function GameStats({ level, score, lines, isInHome }) {
 	return (
 		<div className='game-stats'>
 			<div className='score-grid'>
 				<div className='score-text'>
 					<h3>SCORE</h3>
 				</div>
-				<div className='score-number'>
-					<p>{score}</p>
-				</div>
+				<div className='score-number'>{!isInHome && <p>{score}</p>}</div>
 			</div>
 			<div className='level-board'>
 				<div className='level-text'>
 					<h3>LEVEL</h3>
 				</div>
 				<div className='level-number'>
-					<p>{level}</p>
+					<div className='score-number'>{!isInHome && <p>{level}</p>}</div>
 				</div>
 			</div>
 
@@ -23,7 +21,7 @@ function GameStats({ level, score, lines }) {
 					<h3>LINES</h3>
 				</div>
 				<div className='lines-number'>
-					<p>{lines}</p>
+					<div className='score-number'>{!isInHome && <p>{lines}</p>}</div>
 				</div>
 			</div>
 		</div>
