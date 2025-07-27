@@ -352,6 +352,7 @@ function App() {
 									onClick={() => {
 										setIsInHome(true);
 										setIsPaused(false);
+										handleRestart();
 									}}
 								>
 									<p>QUIT</p>
