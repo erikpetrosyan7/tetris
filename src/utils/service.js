@@ -7,7 +7,7 @@ import {
 	validateRightMove,
 	validateShape,
 } from './validations';
-import { getShapeCells } from './App';
+import { getShapeCells } from './utils';
 
 export const move = (board, shape, shapeCells, direction) => {
 	validateBoard(board);
@@ -55,6 +55,31 @@ export const move = (board, shape, shapeCells, direction) => {
 			i: shape.position.i + 1,
 			j: shape.position.j,
 		};
+	}
+	if (direction === DIRECTIONS.SPACE) {
+		let tempPosition = { ...newPosition };
+
+		while (true) {
+			const nextPosition = {
+				i: tempPosition.i + 1,
+				j: tempPosition.j,
+			};
+
+			const nextShapeCells = getShapeCells({
+				matrix: shape.matrix,
+				position: nextPosition,
+			});
+
+			try {
+				validateDownMove(board, shapeCells);
+				tempPosition = nextPosition;
+
+				validateDownMove(board, nextShapeCells);
+			} catch (e) {
+				break;
+			}
+		}
+		newPosition = tempPosition;
 	}
 
 	return {

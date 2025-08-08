@@ -1,8 +1,10 @@
+import FloatingShape from './FloatingShape';
+
 function Home({ setIsInHome }) {
 	return (
 		<div className='home'>
 			<h1 className='home-title'>TETRIS</h1>
-
+			<FloatingShape />
 			<p className='home-description'>
 				Welcome to the game! Stack the blocks, clear lines, and aim for the high
 				score.
@@ -17,6 +19,8 @@ function Home({ setIsInHome }) {
 					<li>← / → : Move</li>
 					<li>↓ : Soft Drop</li>
 					<li>↑ : Rotate</li>
+
+					<li>Space : Hard Drop</li>
 				</ul>
 			</div>
 		</div>

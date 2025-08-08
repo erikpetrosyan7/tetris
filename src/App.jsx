@@ -1,377 +1,216 @@
-import { useEffect, useRef, useState } from 'react';
-import './App.scss';
-import { move } from './service';
-import { DIRECTIONS } from './constants';
-import getRandomShape from './shapes';
-import NextShapePreview from './NextShapePreview';
-import GameStats from './GameStats';
-import GameOver from './GameOver';
-import Home from './Home';
+// Import React hooks and styles
+import { useRef, useState, useMemo } from 'react';
+import './styles/App.scss';
 
-const width = 10;
-const height = 20;
+// Constants for the board dimensions
+import { BOARD_HEIGHT, BOARD_WIDTH } from './utils/config';
 
-export function getShapeCells(shape) {
-	if (!shape || !shape.matrix) return [];
-	const cells = [];
-	shape.matrix.forEach((row, i) => {
-		row.forEach((value, j) => {
-			if (value === 1) {
-				cells.push({ i: shape.position.i + i, j: shape.position.j + j });
-			}
-		});
-	});
-	return cells;
-}
+// Import helper functions
+import getRandomShape from './utils/shapes';
+import {
+	getShapeCells,
+	getMergedBoard,
+	getNextDifferentShape,
+	formatTime,
+} from './utils/utils';
 
-function getMergedBoard(board, currentShape, shape) {
-	if (!Array.isArray(shape) || shape.length === 0) return board;
-	const merged = board.map(row => [...row]);
-	shape.forEach(({ i, j }) => {
-		if (i >= 0 && i < height && j >= 0 && j < width) {
-			merged[i][j] = currentShape.img;
-		}
-	});
-	return merged;
-}
+// Import UI components
+import GameBoard from './components/GameBoard';
+import NextShapePreview from './components/NextShapePreview';
+import Buttons from './components/Buttons';
+import GameStats from './components/GameStats';
+import GameOver from './components/GameOver';
+import Home from './components/Home';
+import Pause from './components/Pause';
 
-function getNextDifferentShape(current) {
-	let newShape;
-	do {
-		newShape = getRandomShape();
-	} while (newShape.name === current.name);
-	return newShape;
-}
-
-function getFullLines(board) {
-	return board.reduce((full, row, i) => {
-		if (row.every(cell => cell !== 0)) full.push(i);
-		return full;
-	}, []);
-}
-
-function calculateScore(linesCleared, level) {
-	switch (linesCleared) {
-		case 1:
-			return 40 * level;
-		case 2:
-			return 100 * level;
-		case 3:
-			return 300 * level;
-		case 4:
-			return 1200 * level;
-		default:
-			return 0;
-	}
-}
-
-const formatTime = seconds => {
-	const mins = Math.floor(seconds / 60);
-	const secs = seconds % 60;
-	return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-};
+// Import custom hooks
+import useGameLoop from './hooks/useGameLoop';
+import useInputHandler from './hooks/useInputHandler';
+import useGameTimer from './hooks/useGameTimer';
+import { useGameStatus } from './hooks/useGameStatus';
+import useGameController from './hooks/useGameController';
 
 function App() {
-	const [isGameOver, setIsGameOver] = useState(false);
-	const [isPaused, setIsPaused] = useState(false);
-	const [isInHome, setIsInHome] = useState(true);
+	// Game status and control functions from custom hook
+	const { gameStatus, setGameStatus, setIsGameOver, setIsPaused, setIsInHome } =
+		useGameStatus();
+
+	// Game statistics: score, lines cleared, current level
+	const [gameStats, setGameStats] = useState({
+		score: 0,
+		lines: 0,
+		level: 1,
+	});
+
+	// Track which lines are currently clearing (for animation)
 	const [clearingLines, setClearingLines] = useState([]);
-	const [level, setLevel] = useState(1);
-	const [score, setScore] = useState(0);
-	const [lines, setLines] = useState(0);
 
-	// timer
-	const [startTime, setStartTime] = useState(null);
-	const [endTime, setEndTime] = useState(null);
-	const [elapsedTime, setElapsedTime] = useState(0);
+	// Highlight cells that have just landed
+	const [justLandedCells, setJustLandedCells] = useState([]);
 
-	const isLocking = useRef(false);
-
+	// Generate first random shape (Tetrimino)
 	const [currentShape, setCurrentShape] = useState(() => getRandomShape());
 
+	// Memoized cells of current shape
+	const currentShapeCells = useMemo(
+		() => getShapeCells(currentShape),
+		[currentShape]
+	);
+
+	// Generate next shape preview
 	const [nextShape, setNextShape] = useState(() =>
 		getNextDifferentShape(currentShape)
 	);
 
-	const [goDownSteps, setGoDownSteps] = useState(0);
+	// Memoized cells of next shape
+	const nextShapeCells = useMemo(() => getShapeCells(nextShape), [nextShape]);
 
+	// Initialize empty board
 	const [board, setBoard] = useState(() =>
-		Array(height)
+		Array(BOARD_HEIGHT)
 			.fill(null)
-			.map(() => Array(width).fill(0))
+			.map(() => Array(BOARD_WIDTH).fill(0))
 	);
 
-	const handleRestart = () => {
-		isLocking.current = false;
+	// Ref to check if piece is in "locking" phase (prevents double movement)
+	const isLocking = useRef(false);
 
-		setIsGameOver(false);
-		setIsPaused(false);
-		setClearingLines([]);
-		setLevel(1);
-		setScore(0);
-		setLines(0);
-		setStartTime(null);
-		setEndTime(null);
-		setElapsedTime(0);
+	// Game timer: only runs when game is active
+	const isRunning = !gameStatus.isPaused && !gameStatus.isGameOver;
+	const { elapsedTime, resetTimer } = useGameTimer({
+		isRunning,
+		isInHome: gameStatus.isInHome,
+	});
 
-		const newCurrentShape = getRandomShape();
-		setCurrentShape(newCurrentShape);
-		setNextShape(getNextDifferentShape(newCurrentShape));
-
-		setGoDownSteps(0);
-
-		setBoard(
-			Array(height)
-				.fill(null)
-				.map(() => Array(width).fill(0))
-		);
-	};
-
-	// Timer logic
-	useEffect(() => {
-		if (!startTime) {
-			setStartTime(Date.now());
-		}
-	}, []);
-
-	useEffect(() => {
-		if (isGameOver && startTime) {
-			setEndTime(Date.now());
-		}
-	}, [isGameOver, startTime]);
-
-	useEffect(() => {
-		if (endTime && startTime) {
-			const diff = Math.floor((endTime - startTime) / 1000); // in seconds
-			setElapsedTime(diff);
-		}
-	}, [endTime]);
-
-	// Handle key events for moving shapes
-	useEffect(() => {
-		const handleKeyDown = ({ key }) => {
-			if (isGameOver) return;
-
-			let result;
-
-			if (key === 'ArrowUp') {
-				result = move(
-					board,
-					currentShape,
-					getShapeCells(currentShape),
-					DIRECTIONS.UP
-				);
-			} else if (key === 'ArrowLeft') {
-				result = move(
-					board,
-					currentShape,
-					getShapeCells(currentShape),
-					DIRECTIONS.LEFT
-				);
-			} else if (key === 'ArrowRight') {
-				result = move(
-					board,
-					currentShape,
-					getShapeCells(currentShape),
-					DIRECTIONS.RIGHT
-				);
-			} else if (key === 'ArrowDown') {
-				result = move(
-					board,
-					currentShape,
-					getShapeCells(currentShape),
-					DIRECTIONS.DOWN
-				);
-			} else {
-				return;
-			}
-
-			if (result) {
-				setCurrentShape(result);
-			}
-		};
-
-		window.addEventListener('keydown', handleKeyDown);
-		return () => window.removeEventListener('keydown', handleKeyDown);
-	}, [board, currentShape, isGameOver]);
-
-	const moveDown = () => {
-		if (isGameOver || isLocking.current) return;
-
-		isLocking.current = true;
-
-		let result;
-		try {
-			result = move(
-				board,
-				currentShape,
-				getShapeCells(currentShape),
-				DIRECTIONS.DOWN
-			);
-			if (result) {
-				setCurrentShape(result);
-				isLocking.current = false;
-				return;
-			}
-		} catch {
-			const newBoard = getMergedBoard(
-				board,
-				currentShape,
-				getShapeCells(currentShape)
-			);
-			const fullLines = getFullLines(newBoard);
-
-			if (fullLines.length > 0) {
-				setClearingLines(fullLines);
-
-				const linesCleared = fullLines.length;
-
-				setScore(prev => prev + calculateScore(linesCleared, level));
-				setLines(prev => prev + linesCleared);
-				if (lines + linesCleared >= level * 10) {
-					setLevel(prev => prev + 1);
-				}
-				setTimeout(() => {
-					let cleared = newBoard.filter((_, i) => !fullLines.includes(i));
-					while (cleared.length < height) {
-						cleared.unshift(Array(width).fill(0));
-					}
-
-					const newNextShape = getNextDifferentShape(nextShape);
-					const nextShapeCells = getShapeCells(nextShape);
-					const overlaps = nextShapeCells.some(({ i, j }) => {
-						return i >= 0 && i < height && j >= 0 && j < width && cleared[i][j];
-					});
-
-					setClearingLines([]);
-					setBoard(cleared);
-					setCurrentShape(nextShape);
-					setNextShape(newNextShape);
-
-					if (overlaps) {
-						setIsGameOver(true);
-					}
-					isLocking.current = false;
-				}, 300);
-				return;
-			}
-
-			const clearedBoard = newBoard;
-			const nextShapeCells = getShapeCells(nextShape);
-			const overlaps = nextShapeCells.some(({ i, j }) => {
-				return (
-					i >= 0 && i < height && j >= 0 && j < width && clearedBoard[i][j]
-				);
-			});
-			const newNextShape = getNextDifferentShape(nextShape);
-
-			setBoard(clearedBoard);
-			setCurrentShape(nextShape);
-			setNextShape(newNextShape);
-
-			if (overlaps) setIsGameOver(true);
-
-			isLocking.current = false;
-		}
-	};
-
-	useEffect(() => {
-		if (isGameOver || isPaused || isInHome) return;
-
-		moveDown();
-
-		const timeout = setTimeout(() => {
-			setGoDownSteps(prev => prev + 1);
-		}, 500);
-
-		return () => clearTimeout(timeout);
-	}, [goDownSteps, isPaused, isInHome, isGameOver]);
-
-	const mergedBoard = getMergedBoard(
+	// Handle player input (keyboard)
+	useInputHandler({
 		board,
 		currentShape,
-		getShapeCells(currentShape)
-	);
+		currentShapeCells,
+		isGameOver: gameStatus.isGameOver,
+		isPaused: gameStatus.isPaused,
+		isInHome: gameStatus.isInHome,
+		setCurrentShape,
+	});
+
+	// Main game loop: dropping logic, collision, scoring, etc.
+	const { resetTick } = useGameLoop({
+		board,
+		currentShape,
+		currentShapeCells,
+		nextShape,
+		lines: gameStats.lines,
+		level: gameStats.level,
+		isLocking,
+		isGameOver: gameStatus.isGameOver,
+		isPaused: gameStatus.isPaused,
+		isInHome: gameStatus.isInHome,
+		setCurrentShape,
+		setNextShape,
+		setBoard,
+
+		// Functional setters for score/lines/level
+		setScore: updater =>
+			setGameStats(prev => ({
+				...prev,
+				score: typeof updater === 'function' ? updater(prev.score) : updater,
+			})),
+		setLines: updater =>
+			setGameStats(prev => ({
+				...prev,
+				lines: typeof updater === 'function' ? updater(prev.lines) : updater,
+			})),
+		setLevel: updater =>
+			setGameStats(prev => ({
+				...prev,
+				level: typeof updater === 'function' ? updater(prev.level) : updater,
+			})),
+
+		setIsGameOver,
+		setClearingLines,
+		setJustLandedCells,
+		nextShapeCells,
+	});
+
+	// Game controller (restart logic, etc.)
+	const { restartGame } = useGameController({
+		setGameStatus,
+		setGameStats,
+		setClearingLines,
+		setCurrentShape,
+		setNextShape,
+		setBoard,
+		resetTimer,
+		resetTick,
+		isLockingRef: isLocking,
+		getNextDifferentShape,
+	});
+
+	// Merge board with current falling shape
+	const mergedBoard = getMergedBoard(board, currentShapeCells);
+
+	// Format timer value to mm:ss
 	const timer = formatTime(elapsedTime);
 
+	// Render
 	return (
-		<div className='container'>
-			<>
-				{isGameOver && (
+		<>
+			<div className='container'>
+				{/* Main game area on the left */}
+				<div className='game-area'>
+					{gameStatus.isInHome ? (
+						<Home setIsInHome={setIsInHome} />
+					) : (
+						<GameBoard
+							board={mergedBoard}
+							clearingLines={clearingLines}
+							justLandedCells={justLandedCells}
+						/>
+					)}
+				</div>
+
+				{/* Right-side panel: stats + preview + buttons */}
+				<div className='right-board'>
+					<GameStats
+						level={gameStats.level}
+						score={gameStats.score}
+						lines={gameStats.lines}
+						isInHome={gameStatus.isInHome}
+					/>
+					<NextShapePreview
+						nextShape={nextShape}
+						isInHome={gameStatus.isInHome}
+					/>
+
+					{/* Show buttons if not in home */}
+					{!gameStatus.isInHome && (
+						<Buttons setIsPaused={setIsPaused} restartGame={restartGame} />
+					)}
+
+					{/* Show pause menu if game is paused */}
+					{gameStatus.isPaused && (
+						<Pause
+							setIsInHome={setIsInHome}
+							setIsPaused={setIsPaused}
+							restartGame={restartGame}
+						/>
+					)}
+				</div>
+
+				{/* Game over screen */}
+				{gameStatus.isGameOver && (
 					<GameOver
-						score={score}
+						score={gameStats.score}
 						timer={timer}
-						level={level}
-						lines={lines}
-						handleRestart={handleRestart}
+						level={gameStats.level}
+						lines={gameStats.lines}
+						restartGame={restartGame}
 						setIsInHome={setIsInHome}
 						setIsGameOver={setIsGameOver}
 					/>
 				)}
-
-				{isInHome ? (
-					<Home setIsInHome={setIsInHome} />
-				) : (
-					<div className='play-area'>
-						{mergedBoard.map((row, i) => (
-							<div
-								className={`row ${clearingLines.includes(i) ? 'clearing' : ''}`}
-								key={i}
-							>
-								{row.map((cell, j) => (
-									<div className='cell' key={j}>
-										{cell && (
-											<img src={cell} alt='block' className='shape-img' />
-										)}
-									</div>
-								))}
-							</div>
-						))}
-					</div>
-				)}
-
-				<div className='right-board'>
-					<img
-						onClick={() => setIsPaused(true)}
-						className='pause'
-						src='/tetris/images/pause.png'
-						alt='pause-button'
-						style={{ visibility: isInHome ? 'hidden' : 'visible' }}
-					/>
-					{isPaused && (
-						<div>
-							<div className='pause-background'> </div>
-							<div className='pause-popup'>
-								<h3>PAUSED</h3>
-								<div
-									className='resume-button'
-									onClick={() => setIsPaused(false)}
-								>
-									<p>RESUME</p>
-								</div>
-								<div
-									className='quit-button'
-									onClick={() => {
-										setIsInHome(true);
-										setIsPaused(false);
-										handleRestart();
-									}}
-								>
-									<p>QUIT</p>
-								</div>
-							</div>
-						</div>
-					)}
-					<NextShapePreview nextShape={nextShape} isInHome={isInHome} />
-					<GameStats
-						level={level}
-						score={score}
-						lines={lines}
-						isInHome={isInHome}
-					/>
-				</div>
-			</>
-		</div>
+			</div>
+		</>
 	);
 }
 

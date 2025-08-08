@@ -3,7 +3,7 @@ export default function GameOver({
 	timer,
 	level,
 	lines,
-	handleRestart,
+	restartGame,
 	setIsInHome,
 	setIsGameOver,
 }) {
@@ -38,14 +38,13 @@ export default function GameOver({
 						onClick={() => {
 							setIsInHome(true);
 							setIsGameOver(false);
-							handleRestart();
 						}}
 					/>
 
 					<img
 						src='/tetris/images/restart.png'
 						alt='restart-button'
-						onClick={() => handleRestart()}
+						onClick={() => restartGame()}
 					/>
 				</div>
 			</div>
