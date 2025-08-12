@@ -4,7 +4,12 @@ function Buttons({ setIsPaused, restartGame }) {
 			<button onClick={() => setIsPaused(true)}>
 				<p>PAUSE</p>
 			</button>
-			<button onClick={restartGame}>
+			<button
+				onClick={e => {
+					restartGame();
+					e.currentTarget.blur();
+				}}
+			>
 				<p>RESTART</p>
 			</button>
 		</div>
